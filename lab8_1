@@ -1,0 +1,45 @@
+	public static void main(String argv[]) {
+		String infile = DATA_FILE;
+		String label = "name";
+
+		if (argv.length > 1) {
+			infile = argv[0];
+			label = argv[1];
+		}
+
+		UILib.setPlatformLookAndFeel();
+
+		final JFrame frame = new JFrame("p r e f u s e  |  r a d i a l g r a p h v i e w");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setContentPane(demo(infile, label));
+		frame.pack();
+		frame.setVisible(true);
+
+		// adding menu items from here
+		JMenuBar menuBar = new JMenuBar();
+		JMenu fileMenu = new JMenu("File");
+		menuBar.add(fileMenu);
+		frame.setJMenuBar(menuBar);
+		// adding open option under file menu
+		JMenuItem open = new JMenuItem("Open");
+		fileMenu.add(open);
+		open.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileOpen = new JFileChooser();
+				String[] ext = new String[1];
+				ext[0] = "xml";
+				FileNameExtensionFilter extensionFilter = new FileNameExtensionFilter("XML", ext);
+				fileOpen.addChoosableFileFilter(extensionFilter);
+				fileOpen.setCurrentDirectory(new File("Users/hdesai/git/Prefuse/data"));
+				int returnValue = fileOpen.showDialog(null, "Open");
+				if (returnValue == JFileChooser.APPROVE_OPTION) {
+					File openFile = fileOpen.getSelectedFile();
+					frame.setContentPane(demo(openFile.getAbsolutePath(), "name"));
+					frame.revalidate();
+					frame.repaint();
+				}
+
+			}
+		});
+
+	}
