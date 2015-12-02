@@ -1,0 +1,87 @@
+package lab8;
+import java.io.*;
+import java.util.*;
+import java.util.Map.Entry;
+
+public class NodesAndEdges {
+	public static HashMap<String, Integer> getNodes(String inputFile) throws Exception {
+		HashMap<String, Integer> nodes = new HashMap<>();
+		BufferedReader readFile = new BufferedReader(new FileReader(inputFile));
+		String[] header = readFile.readLine().split("\t");
+
+		nodes.put("root" + "###" + "root", 1);
+		int id = 2;
+		String line = "";
+		while ((line = readFile.readLine()) != null) {
+			String[] lineData = line.split("\t");
+			int i = 0;
+			for (String s : lineData) {
+				if (s.equals("") || nodes.containsKey(s + "###" + header[i])) {
+					i++;
+					continue;
+				} else {
+					nodes.put(s + "###" + header[i], id);
+					id++;
+				}
+				i++;
+			}
+		}
+		readFile.close();
+		return nodes;
+	}
+
+	public static HashMap<String, Integer> getEdges(String inputFile, HashMap<String, Integer> nodes) throws Exception {
+
+		HashMap<String, Integer> edges = new HashMap<>();
+		BufferedReader br = new BufferedReader(new FileReader(inputFile));
+		String line = "";
+		String[] lineData;
+		String[] header = br.readLine().split("\t");
+
+		while ((line = br.readLine()) != null) {
+			lineData = line.split("\t");
+			int reference = 1;
+			int i = 0;
+			for (String s : lineData) {
+				if (s.equals("")) {
+					i++;
+					continue;
+				} else {
+					String relationship = reference + "###" + nodes.get(s + "###" + header[i]);
+					edges.put(relationship, 0);
+					reference = nodes.get(s + "###" + header[i]);
+				}
+				i++;
+			}
+		}
+
+		br.close();
+		return edges;
+	}
+
+	public static void main(String[] args) throws Exception {
+		String inputFile = "//Users//hdesai//Documents//Fall2015//new_data.txt";
+		String outputFile = "/Users/hdesai/Documents/Fall2015/new_data.xml";
+
+		HashMap<String, Integer> nodes = getNodes(inputFile);
+		HashMap<String, Integer> edges = getEdges(inputFile, nodes);
+
+		BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
+
+		// XML info
+		bw.write(
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!-- taxonomic data  -->\n<graphml xmlns=\"http://graphml.graphdrawing.org/xmlns\">\n<graph edgedefault=\"undirected\">\n<!-- data schema -->\n<key id=\"name\" for=\"node\" attr.name=\"name\" attr.type=\"string\"/>\n<key id=\"level\" for=\"node\" attr.name=\"level\" attr.type=\"string\"/>\n<!-- nodes -->\n");
+
+		// Nodes
+		for (Entry<String, Integer> node : nodes.entrySet())
+			bw.write("<node id=\"" + node.getValue() + "\">\n<data key=\"name\">" + node.getKey().split("###")[0]
+					+ "</data>\n<data key=\"level\">" + node.getKey().split("###")[1] + "</data>\n</node>\n");
+
+		// Edges
+		for (String s : edges.keySet())
+			bw.write("<edge source=\"" + s.split("###")[0] + "\" target=\"" + s.split("###")[1]
+					+ "\"></edge>\n");
+		bw.write("</graph>\n</graphml>");
+		bw.close();
+	}
+}
