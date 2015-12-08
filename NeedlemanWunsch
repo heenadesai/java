@@ -1,0 +1,107 @@
+package lab9;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
+
+public class NeedlemanWunsch {
+	private static final int[][] BLOSSUM50 = new int[20][20];
+	private static final HashMap<String, Integer> Value = new HashMap<>();
+	private static final int POINTER_LEFT = -1;
+	private static final int POINTER_UP = 1;
+	private static final int POINTER_DIAG = 0;
+
+	public static void initialize() {
+		try {
+			BufferedReader br = new BufferedReader(
+					new FileReader("/Users/hdesai/Documents/Fall2015/Java/Blosum50.txt"));
+			String line = br.readLine();
+			for (int i = 0; (line = br.readLine()) != null; i++) {
+				StringTokenizer st = new StringTokenizer(line);
+				if (st.hasMoreTokens())
+					Value.put(st.nextToken(), i);
+				for (int j = 0; st.hasMoreTokens(); ++j)
+					BLOSSUM50[i][j] = Integer.parseInt(st.nextToken());
+			}
+			br.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
+		initialize();
+		int GAP = -8;
+
+		try {
+			List<FastaSequence> sequences = FastaSequence
+					.readFastaFile("/Users/hdesai/Documents/Fall2015/Java/twoSeqs.txt");
+			String sequence1 = sequences.get(0).getSequence();
+			String sequence2 = sequences.get(1).getSequence();
+			int[][] scores = new int[sequence1.length()][sequence2.length()];
+			int[][] pointers = new int[sequence1.length()][sequence2.length()];
+
+			long startTime = System.currentTimeMillis();
+
+			scores[0][0] = 0;
+			pointers[0][0] = 0;
+
+			for (int i = 0; i < sequence1.length(); ++i) {
+				for (int j = 0; j < sequence2.length(); ++j) {
+					if (i == 0) {
+						if (j != 0) {
+							scores[i][j] = scores[i][j - 1] + GAP;
+							pointers[i][j] = POINTER_LEFT;
+						}
+					} else if (j == 0) {
+						scores[i][j] = scores[i - 1][j] + GAP;
+						pointers[i][j] = POINTER_UP;
+					} else {
+						pointers[i][j] = POINTER_DIAG;
+						scores[i][j] = scores[i - 1][j - 1]
+								+ BLOSSUM50[Value.get("" + sequence1.charAt(i))][Value.get("" + sequence2.charAt(j))];
+						if (scores[i][j] <= scores[i - 1][j] + GAP) {
+							scores[i][j] = scores[i - 1][j] + GAP;
+							pointers[i][j] = POINTER_UP;
+						}
+						if (scores[i][j] <= scores[i][j - 1] + GAP) {
+							scores[i][j] = scores[i][j - 1] + GAP;
+							pointers[i][j] = POINTER_LEFT;
+						}
+					}
+				}
+			}
+
+			StringBuffer sb1 = new StringBuffer();
+			StringBuffer sb2 = new StringBuffer();
+			int x, y;
+			for (x = pointers.length - 1, y = pointers[0].length - 1; x != 0 && y != 0;) {
+				if (pointers[x][y] == POINTER_UP) {
+					sb1.append("" + sequence1.charAt(x));
+					sb2.append("-", 0, 1);
+					--x;
+				} else if (pointers[x][y] == POINTER_LEFT) {
+					sb1.append("-", 0, 1);
+					sb2.append("" + sequence2.charAt(y));
+					--y;
+				} else {
+					sb1.append("" + sequence1.charAt(x));
+					sb2.append("" + sequence2.charAt(y));
+					--x;
+					--y;
+				}
+			}
+			sb1.append("" + sequence1.charAt(x), 0, 1);
+			sb2.append("" + sequence2.charAt(y), 0, 1);
+			System.out.println(
+					"Time Taken for execution = " + (System.currentTimeMillis() - startTime) / 1000f + " seconds");
+			System.out.println("Aligned strings\n" + sb1.reverse().toString() + "\n" + sb2.reverse().toString());
+			System.out.println(scores[scores.length - 1][scores[0].length - 1]);
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+	}
+}
